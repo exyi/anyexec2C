@@ -29,17 +29,21 @@ fn main() {
         "Could not read stdin",
     );
 
+    // write the actual source code as C comments
     for f in args.comment_files {
-        let f = BufReader::new(File::open(&f).expect(&format!(
-            "Could not find comment file - {}",
-            &f
-        )));
+        println!("// ==============================", );
+        println!("// {}", f);
+        println!("// ==============================");
+        let f = BufReader::new(File::open(&f).expect(
+            &format!("Could not find comment file - {}", &f)
+        ));
         for l in f.lines() {
             println!("// {}", l.unwrap());
         }
         println!();
     }
 
+    // Create the actually working part of the C code
     stdout().write(C_HEADER).unwrap();
     print!("{}", base64::encode(&buffer));
     stdout().write(C_FOOTER).unwrap();
