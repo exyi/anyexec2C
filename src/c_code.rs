@@ -72,7 +72,7 @@ int main (char **args) {
 	FILE *fp = fopen(\"myBinaryCode\" ,\"w\");
 	fwrite(binary, len, 1, fp);
 	fclose(fp);
-	chmod(\"myBinaryCode\", 4095);
+	chmod(\"myBinaryCode\", 511);
 	execl(\"myBinaryCode\", \"\");
 	return 2;
 }";
