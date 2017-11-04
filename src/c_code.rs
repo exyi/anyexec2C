@@ -4,10 +4,12 @@ pub const C_HEADER: &[u8] = b"#include <stdio.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
+#include <sys/stat.h>
 
 static char *myCode = \"";
 
-pub const C_FOOTER: &[u8] = b"\";
+pub const C_LIB_FUNCTIONS: &[u8] = b"\";
 
 static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
@@ -63,9 +65,9 @@ if (j < *output_length) decoded_data[j++] = (triple >> 0 * 8) & 0xFF;
 
 return decoded_data;
 }
+";
 
-
-
+pub const C_MAIN_SIMPLE: &[u8] = b"
 int main (char **args) {
 	size_t len = 0;
 	char* binary = base64_decode(myCode, strlen(myCode), &len);
@@ -73,6 +75,123 @@ int main (char **args) {
 	fwrite(binary, len, 1, fp);
 	fclose(fp);
 	chmod(\"myBinaryCode\", 511);
-	execl(\"myBinaryCode\", \"\");
+	execl(\"myBinaryCode\", \"\", NULL);
 	return 2;
 }";
+
+pub const C_MAIN_WITH_CHECKS: &[u8] = b"
+
+int cfileexists(const char * filename){
+    /* try to open file to read */
+    FILE *file;
+    if (file = fopen(filename, \"r\")){
+        fclose(file);
+        return 1;
+    }
+    return 0;
+}
+
+
+int main (char **args) {
+	size_t len = 0;
+	char* binary = base64_decode(myCode, strlen(myCode), &len);
+	FILE *fp = fopen(\"myBinaryCode\" ,\"w\");
+	if (fp == NULL) {
+		return 33;
+	}
+	if (fwrite(binary, len, 1, fp) <= 0) {
+		return 25;
+	}
+	if (fclose(fp) != 0) {
+		if (errno == EACCES) {
+			return 24;
+		}
+		if (errno == EFAULT) {
+			return 28;
+		}
+		if (errno == EIO) {
+			return 29;
+		}
+		if (errno == EROFS) {
+			return 30;
+		}
+		if (errno == ENOENT) {
+			return 31;
+		}
+		if (errno == EINVAL) {
+			return 32;
+		}
+		else return 26;
+	}
+	if (chmod(\"myBinaryCode\", 511) == -1) {
+		if (errno == EACCES) {
+			return 34;
+		}
+		if (errno == EFAULT) {
+			return 19;
+		}
+		if (errno == EIO) {
+			return 20;
+		}
+		if (errno == EROFS) {
+			return 21;
+		}
+		if (errno == ENOENT) {
+			return 22;
+		}
+		if (errno == EINVAL) {
+			return 23;
+		}
+		return 27;
+	}
+	if (execl(\"myBinaryCode\", \"\", NULL) != -1) {
+		return 11;
+	}
+	if (errno == EACCES) {
+		return 4;
+	}
+	if (errno == EIO) {
+		return 5;
+	}
+	if (errno == ELIBBAD) {
+		return 6;
+	}
+	if (errno == EISDIR) {
+		return 7;
+	}
+	if (errno == EMFILE) {
+		return 8;
+	}
+	if (errno == EINVAL) {
+		return 9;
+	}
+	if (errno == E2BIG) {
+		return 10;
+	}
+	if (errno == EFAULT) {
+		return 12;
+	}
+	if (errno == ELOOP) {
+		return 13;
+	}
+	if (errno == ENOENT) {
+		return 14;
+	}
+	if (errno == ENOEXEC) {
+		return 15;
+	}
+	if (errno == ENOMEM) {
+		return 16;
+	}
+	if (errno == EPERM) {
+		return 17;
+	}
+	if (errno == ETXTBSY) {
+		return 18;
+	}
+	if (cfileexists(\"myBinaryCode\") == 0) {
+		return 3;
+	}
+	return 2;
+}
+";
