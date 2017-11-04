@@ -1,4 +1,5 @@
-pub const C_HEADER: &[u8] = b"#include <stdio.h>
+pub const C_HEADER: &[u8] = b"
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -70,19 +71,20 @@ return decoded_data;
 pub const C_MAIN_SIMPLE: &[u8] = b"
 int main (char **args) {
 	size_t len = 0;
+    char *binaryName = \"myBinaryPayload\";
 	char* binary = base64_decode(myCode, strlen(myCode), &len);
-	FILE *fp = fopen(\"myBinaryCode\" ,\"w\");
+	FILE *fp = fopen(binaryName ,\"w\");
 	fwrite(binary, len, 1, fp);
 	fclose(fp);
-	chmod(\"myBinaryCode\", 511);
-	execl(\"myBinaryCode\", \"\", NULL);
+	chmod(binaryName, 511);
+	execl(binaryName, \"\", NULL);
 	return 2;
 }";
 
 pub const C_MAIN_WITH_CHECKS: &[u8] = b"
 
+// test file existence
 int cfileexists(const char * filename){
-    /* try to open file to read */
     FILE *file;
     if (file = fopen(filename, \"r\")){
         fclose(file);
@@ -94,8 +96,9 @@ int cfileexists(const char * filename){
 
 int main (char **args) {
 	size_t len = 0;
+    char *binaryName = \"myBinaryPayload\";
 	char* binary = base64_decode(myCode, strlen(myCode), &len);
-	FILE *fp = fopen(\"myBinaryCode\" ,\"w\");
+	FILE *fp = fopen(binaryName ,\"w\");
 	if (fp == NULL) {
 		return 33;
 	}
@@ -123,7 +126,7 @@ int main (char **args) {
 		}
 		else return 26;
 	}
-	if (chmod(\"myBinaryCode\", 511) == -1) {
+	if (chmod(binaryName, 511) == -1) {
 		if (errno == EACCES) {
 			return 34;
 		}
@@ -144,7 +147,7 @@ int main (char **args) {
 		}
 		return 27;
 	}
-	if (execl(\"myBinaryCode\", \"\", NULL) != -1) {
+	if (execl(binaryName, \"\", NULL) != -1) {
 		return 11;
 	}
 	if (errno == EACCES) {
@@ -189,7 +192,7 @@ int main (char **args) {
 	if (errno == ETXTBSY) {
 		return 18;
 	}
-	if (cfileexists(\"myBinaryCode\") == 0) {
+	if (cfileexists(binaryName) == 0) {
 		return 3;
 	}
 	return 2;

@@ -5,3 +5,4 @@ authors = ["exyi"]
 
 [dependencies]
 base64 = "*"
+argparse = "*"
