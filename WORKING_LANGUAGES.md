@@ -11,3 +11,7 @@ Standard `rustc` compiler does not work. The binaries are sometimes too big and 
 ## C
 
 It's pretty much useless, but you can run any C binaries. The two main compilers, GCC and `clang`, both work out of the box.
+
+## Python
+
+Both version 2 and 3 are installed in their standard location. Beware of long startup time. And don't forget to add the shebang `#!/usr/bin/python3` or `#!/usr/bin/python` for Python2.
