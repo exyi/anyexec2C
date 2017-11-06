@@ -8,7 +8,7 @@ pub const C_HEADER: &[u8] = b"
 #include <errno.h>
 #include <sys/stat.h>
 
-static char *myCode = \"";
+static char *executable = \"";
 
 pub const C_LIB_FUNCTIONS: &[u8] = b"\";
 
@@ -66,13 +66,14 @@ if (j < *output_length) decoded_data[j++] = (triple >> 0 * 8) & 0xFF;
 
 return decoded_data;
 }
+
+const *char binaryName = \"myBinaryPayload\";
 ";
 
 pub const C_MAIN_SIMPLE: &[u8] = b"
 int main (char **args) {
 	size_t len = 0;
-    char *binaryName = \"myBinaryPayload\";
-	char* binary = base64_decode(myCode, strlen(myCode), &len);
+	char* binary = base64_decode(executable, strlen(executable), &len);
 	FILE *fp = fopen(binaryName ,\"w\");
 	fwrite(binary, len, 1, fp);
 	fclose(fp);
@@ -96,8 +97,7 @@ int cfileexists(const char * filename){
 
 int main (char **args) {
 	size_t len = 0;
-    char *binaryName = \"myBinaryPayload\";
-	char* binary = base64_decode(myCode, strlen(myCode), &len);
+	char* binary = base64_decode(executable, strlen(executable), &len);
 	FILE *fp = fopen(binaryName ,\"w\");
 	if (fp == NULL) {
 		return 33;

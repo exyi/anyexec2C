@@ -10,12 +10,12 @@ Primary purpose of this program is to bypass programming language limitations in
 
 ``` bash
 # simplest usage
-cat anyExecutableFile | anyexec2c > source.c
+anyexec2c -x executableFile > source.c
 
 # insert actual source code as comments
-cat anyExecutableFile | anyexec2c original_source.any > source.c
+anyexec2c -x executableFile -c original_source.any > source.c
 
 # if something does not work, you can add some diagnostic return codes using `-e` flag
 
-cat anyExecutableFile | anyexec2c -e > source.c
+anyexec2c -e -x executable > source.c
 ```
