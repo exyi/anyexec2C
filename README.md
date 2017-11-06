@@ -1,6 +1,6 @@
 # AnyExec2C
 
-This is a simple program used to convert any executable to C source code, that will run that executable after being compiled. It works by saving the executable file in the C source code, which will save it to file `myBinaryCode` and run it.
+This is a simple program used to convert any executable to C source code, which  will run it after being compiled. It works by saving the executable file encoded in the C source code. When executed, it will dump the executable into file and run it.
 
 ## Purpose
 
