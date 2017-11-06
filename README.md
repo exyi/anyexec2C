@@ -13,7 +13,7 @@ Primary purpose of this program is to bypass programming language limitations in
 cat anyExecutableFile | anyexec2c > source.c
 
 # insert actual source code as comments
-cat anyExecutableFile | anyexec2c -c original_source.any > source.c
+cat anyExecutableFile | anyexec2c original_source.any > source.c
 
 # if something does not work, you can add some diagnostic return codes using `-e` flag
 
