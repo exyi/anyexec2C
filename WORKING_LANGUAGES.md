@@ -15,3 +15,7 @@ It's pretty much useless, but you can run any C binaries. The two main compilers
 ## Python
 
 Both version 2 and 3 are installed in their standard location. Beware of long startup time. And don't forget to add the shebang `#!/usr/bin/python3` or `#!/usr/bin/python` for Python2.
+
+## Perl (5)
+
+Perl is installed at `/usr/bin/perl` and also seems to work. Beware of worse performance compared to C and don't forget the shebang `#!/usr/bin/perl`
