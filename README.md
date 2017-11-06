@@ -1,10 +1,10 @@
 # AnyExec2C
 
-This is a simple program used to convert any executable to C source code, which  will run it after being compiled. It works by saving the executable file encoded in the C source code. When executed, it will dump the executable into file and run it.
+This is a simple program used to convert any executable to C source code, which will run it after being compiled. It works by saving the executable file encoded in the C source code. When executed, it will dump the executable into a file and run it.
 
 ## Purpose
 
-Primary purpose of this program is to bypass programming language limitations in ReCodEx - software used to programmatically check validity of student's code.
+Primary purpose of this program is to bypass programming language limitations in ReCodEx - software used to programmatically check validity of student's code. Check out [WORKING_LANGUAGES.md](WORKING_LANGUAGES.md) for more info about tested languages. It may work similarly other testing environments.
 
 ## Usage
 
