@@ -1,4 +1,4 @@
-pub const C_HEADER: &[u8] = b"
+pub const C_LIBS_AND_EXECUTABLE: &str = "
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -7,10 +7,6 @@ pub const C_HEADER: &[u8] = b"
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
-
-static char *executable = \"";
-
-pub const C_LIB_FUNCTIONS: &[u8] = b"\";
 
 static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
@@ -67,22 +63,34 @@ if (j < *output_length) decoded_data[j++] = (triple >> 0 * 8) & 0xFF;
 return decoded_data;
 }
 
-const *char binaryName = \"myBinaryPayload\";
-";
+const char* binaryName = \"myBinaryPayload\";
 
-pub const C_MAIN_SIMPLE: &[u8] = b"
-int main (char **args) {
+
+void extract(char* payload, const char* filename) {
 	size_t len = 0;
-	char* binary = base64_decode(executable, strlen(executable), &len);
-	FILE *fp = fopen(binaryName ,\"w\");
+	char* binary = base64_decode(payload, strlen(payload), &len);
+	FILE *fp = fopen(filename ,\"w\");
 	fwrite(binary, len, 1, fp);
 	fclose(fp);
-	chmod(binaryName, 511);
+
+	// does not hurt if everything has all permissions allowed
+	chmod(filename, 511);
+}
+
+static char *executable = \"%%EXECUTABLE%%\";
+";
+
+pub const C_MAIN_SIMPLE: &str = "
+int main (char **args) {
+	extract(executable, binaryName);
+
+	%%ASSETS%%
+
 	execl(binaryName, \"\", NULL);
 	return 2;
 }";
 
-pub const C_MAIN_WITH_CHECKS: &[u8] = b"
+pub const C_MAIN_WITH_CHECKS: &str = "
 
 // test file existence
 int cfileexists(const char * filename){

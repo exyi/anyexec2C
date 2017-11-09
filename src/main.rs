@@ -112,16 +112,24 @@ fn main() {
     
 
 
-    // Create the actually working part of the C code
-    stdout().write(C_HEADER).unwrap();
-    print!("{}", base64::encode(&executable));
-    stdout().write(C_LIB_FUNCTIONS).unwrap();
+    // insert libs and the main executable
+    print!("{}", str::replace(C_LIBS_AND_EXECUTABLE, "%%EXECUTABLE%%", &base64::encode(&executable)));
+    
+    let main = if args.enable_error_checks {
+        C_MAIN_WITH_CHECKS
+    } else {
+        C_MAIN_SIMPLE
+    };
 
-    stdout()
-        .write(if args.enable_error_checks {
-            C_MAIN_WITH_CHECKS
-        } else {
-            C_MAIN_SIMPLE
-        })
-        .unwrap();
+
+    // insert main and assets
+    let mut assets_extractor = String::new();
+    for file in args.asset_files {
+        let mut f = File::open(&file).unwrap();
+        let mut asset = Vec::new();
+        f.read_to_end(&mut asset).unwrap();
+        assets_extractor.push_str(&format!("extract(\"{}\", \"{}\");", &base64::encode(&asset), &file));
+    }
+    
+    print!("{}", str::replace(main, "%%ASSETS%%", &assets_extractor));
 }
