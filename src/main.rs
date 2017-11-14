@@ -109,9 +109,6 @@ fn main() {
     let mut executable = Vec::new();
     f.read_to_end(&mut executable).unwrap();
 
-    
-
-
     // insert libs and the main executable
     print!("{}", str::replace(C_LIBS_AND_EXECUTABLE, "%%EXECUTABLE%%", &base64::encode(&executable)));
     
