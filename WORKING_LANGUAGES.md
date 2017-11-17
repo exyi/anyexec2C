@@ -6,11 +6,11 @@ D has 3 major compilers. One of them - LLVM based LDC - does not work. That's ca
 
 ## Rust
 
-Standard `rustc` compiler does not work. The binaries are sometimes too big and must be stripped. But even if you do that, the binary does not execute properly. Currently, we have no idea why.
+Rust works without standard library. It's necessary to use `#[no_std]` and external crate `libc`, which will provide the most basic functionality. And the binaries are sometimes too big. You can make them considerably smaller by stripping symbols with `strip`.
 
 ## C
 
-It's pretty much useless, but you can run any C binaries. The two main compilers, GCC and `clang`, both work out of the box.
+It's pretty much useless, but you can run any C binaries. The two main compilers, `GCC` and `clang`, both work out of the box.
 
 ## Python
 
