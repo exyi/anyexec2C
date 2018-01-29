@@ -16,6 +16,8 @@ anyexec2c -x executableFile > source.c
 anyexec2c -x executableFile -c original_source.any > source.c
 
 # if something does not work, you can add some diagnostic return codes using `-e` flag
-
 anyexec2c -e -x executable > source.c
+
+# for supported languages, you can just pass in the source code
+anyexec2c -b source.d > source.c   # (uses DMD compiler)
 ```
