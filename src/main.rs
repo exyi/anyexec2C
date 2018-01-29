@@ -3,8 +3,9 @@ extern crate argparse;
 
 use std::io::*;
 use std::fs::*;
-use std::process::Command;
+use std::process::{Command,exit};
 use std::path::Path;
+use std::env;
 
 mod c_code;
 use c_code::*;
@@ -66,7 +67,7 @@ fn parse_args() -> CmdArgs {
         } else {
             println!("Nothing to execute.");
         }
-        ::std::process::exit(1);
+        exit(1);
     }
 
     // add build file to comment files
@@ -91,7 +92,7 @@ fn main() {
         let path = Path::new(&f);
         if !path.exists() {
             eprintln!("{} - file does not exist!", f);
-            ::std::process::exit(1);
+            exit(1);
         }
 
         println!("// ==============================", );
@@ -113,45 +114,25 @@ fn main() {
         let extension = extension.split(".").last();
         if extension.is_none() {
             eprintln!("Failed to split extension off build file name");
-            ::std::process::exit(1);
+            exit(1);
         }
         let extension = extension.unwrap();
-        match extension {
+        args.exec_file = match extension {
             // D lang
             "d" => {
-                let output = Command::new("dmd")
-                    .arg("-O")
-                    .arg(build_file)
-                    .arg("-of=a.out")
-                    .arg(format!("-od={}",::std::env::temp_dir().as_os_str().to_str().expect("TMP dir has non-unicode name!")))
-                    .output()
-                    .expect("Failed to execute DMD to compile D source");
-                // Check output and print it to stderr...
-                {
-                    let stderr = ::std::io::stderr();
-                    let mut handle = stderr.lock();
-                    let _result = handle.write_all(&output.stdout);
-                    let _result = handle.write_all(&output.stderr);
-                }
-
-                if !output.status.success() {
-                    eprintln!("\nCompilation error!");
-                    ::std::process::exit(1);
-                }
-                
-                // Check for compiled binary existence
-                let path = Path::new("a.out");
-                if !path.exists() {
-                    eprintln!("Couldn't find compiled binary... Failed.");
-                    ::std::process::exit(1);
-                }
-                args.exec_file = Some(String::from("a.out"));
+                compile(&format!("dmd -O {} -of=a.out -od={}", 
+                    build_file,
+                    env::temp_dir().as_os_str().to_str().expect("TMP dir has non-unicode name!"))
+                )
+            }
+            "go" => {
+                compile(&format!("go build -o a.out {}", build_file))
             }
             _ => {
                 eprintln!("File extension not recognized! Can't build!");
-                ::std::process::exit(1);
+                exit(1);
             }
-        }
+        };
     }
 
     // read executable
@@ -180,4 +161,41 @@ fn main() {
     }
     
     print!("{}", str::replace(main, "%%ASSETS%%", &assets_extractor));
+}
+
+
+/// Takes `&str`, executes it. Expected executable result is file called `a.out`
+fn compile(build_command: &str) -> Option<String> {
+    // assemble command
+    let mut parts = build_command.split(" ");
+    let mut command = Command::new(parts.next().unwrap());
+    let args: Vec<&str> = parts.collect();
+    let command = command.args(args);
+
+    // execute
+    let output = command.output()
+        .expect(&format!("Failed to execute compiler. Command:\n{}", build_command));
+
+    // Check output and print it to stderr...
+    {
+        let stderr = ::std::io::stderr();
+        let mut handle = stderr.lock();
+        let _result = handle.write_all(&output.stdout);
+        let _result = handle.write_all(&output.stderr);
+    }
+
+    // check status
+    if !output.status.success() {
+        eprintln!("\nCompilation error!");
+        exit(1);
+    }
+    
+    // Check for compiled binary existence
+    let path = Path::new("a.out");
+    if !path.exists() {
+        eprintln!("Couldn't find compiled binary... Failed.");
+        exit(1);
+    }
+
+    Some(String::from("a.out"))
 }
