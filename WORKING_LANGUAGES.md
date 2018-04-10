@@ -6,7 +6,22 @@ D has 3 major compilers. One of them - LLVM based LDC - does not work. That's ca
 
 ## Rust
 
-Rust works without standard library. It's necessary to use `#[no_std]` and external crate `libc`, which will provide the most basic functionality. And the binaries are sometimes too big. You can make them considerably smaller by stripping symbols with `strip`.
+Rust works... ...when you compile it statically (which is not the default, surprisingly).
+
+```sh
+# install new SDK
+rustup target add x86_64-unknown-linux-musl
+
+# build your code
+cargo build --target x86_64-unknown-linux-musl --release
+```
+
+It might also be a good idea to strip the binary ahead of running it through `anyexec2c`, because it's quite big and by stripping it, you can get it from 5MB to something like 0.5MB.
+
+```sh
+strip build/x86_64-unknown-linux-musl/release/$YOUR_PROJECT_NAME
+anyexec2C -x build/x86_64-unknown-linux-musl/release/$YOUR_PROJECT_NAME > /tmp/source.c
+```
 
 ## C
 
