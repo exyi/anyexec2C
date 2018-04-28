@@ -19,5 +19,7 @@ anyexec2c -x executableFile -c original_source.any > source.c
 anyexec2c -e -x executable > source.c
 
 # for supported languages, you can just pass in the source code
-anyexec2c -b source.d > source.c   # (uses DMD compiler)
+anyexec2c -b source.d > source.c      # (D lang with  DMD compiler)
+anyexec2c -b source.go > source.c     # (Go)
+anyexec2c -b src/main.rs > source.c   # (Rust using cargo - necessary to call from projects main dir)
 ```

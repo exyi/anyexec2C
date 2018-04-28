@@ -3,11 +3,12 @@ extern crate argparse;
 
 use std::io::*;
 use std::fs::*;
-use std::process::{Command,exit};
+use std::process::{Command, exit};
 use std::path::Path;
 use std::env;
 
 mod c_code;
+
 use c_code::*;
 use argparse::{ArgumentParser, StoreTrue, List, StoreOption};
 
@@ -37,22 +38,22 @@ fn parse_args() -> CmdArgs {
             "Add error checks to the launcher source code. Results are delivered via exit code.",
         );
         ap.refer(&mut args.comment_files).add_option(
-            &["-c","--comment"],
+            &["-c", "--comment"],
             List,
             "Original source code files attached as comments inside the generated file",
         );
         ap.refer(&mut args.build_file).add_option(
-            &["-b","--build"],
+            &["-b", "--build"],
             StoreOption,
             "Compile and exec this file. It also attaches it as a comment file. Can't be used together with --exec",
         );
         ap.refer(&mut args.asset_files).add_option(
             &["-a", "--asset"],
             List,
-            "File that will be just saved alongside your executable. Its name will stay the same."
+            "File that will be just saved alongside your executable. Its name will stay the same.",
         );
         ap.refer(&mut args.exec_file).add_option(
-            &["-x","--exec"],
+            &["-x", "--exec"],
             StoreOption,
             "Deliver and execute this file. Can't be used together with --build",
         );
@@ -120,13 +121,18 @@ fn main() {
         args.exec_file = match extension {
             // D lang
             "d" => {
-                compile(&format!("dmd -O {} -of=a.out -od={}", 
-                    build_file,
-                    env::temp_dir().as_os_str().to_str().expect("TMP dir has non-unicode name!"))
-                )
+                compile(&format!("dmd -O {} -of=a.out -od={}",
+                                 build_file,
+                                 env::temp_dir().as_os_str().to_str().expect("TMP dir has non-unicode name!")
+                ), "a.out")
             }
             "go" => {
-                compile(&format!("go build -o a.out {}", build_file))
+                compile(&format!("go build -o a.out {}", build_file), "a.out")
+            }
+            "rs" => {
+                let program_name = bash_command("cat Cargo.toml | grep \"name\" | sed 's/.*\"\\(.*\\)\"/\\1/'");
+                let pn = program_name.trim();
+                compile(&format!("cargo build -Z unstable-options --release --target x86_64-unknown-linux-musl --out-dir ."), pn)
             }
             _ => {
                 eprintln!("File extension not recognized! Can't build!");
@@ -136,14 +142,15 @@ fn main() {
     }
 
     // read executable
-    let exec_file = args.exec_file.unwrap();
+    let exec_file = args.exec_file.expect("No executable file supplied!");
+    bash_command(&format!("strip {}", exec_file));      // remove debug symbols from the binary
     let mut f = File::open(&exec_file).unwrap();
     let mut executable = Vec::new();
     f.read_to_end(&mut executable).unwrap();
 
     // insert libs and the main executable
     print!("{}", str::replace(C_LIBS_AND_EXECUTABLE, "%%EXECUTABLE%%", &base64::encode(&executable)));
-    
+
     let main = if args.enable_error_checks {
         C_MAIN_WITH_CHECKS
     } else {
@@ -159,13 +166,13 @@ fn main() {
         f.read_to_end(&mut asset).unwrap();
         assets_extractor.push_str(&format!("extract(\"{}\", \"{}\");", &base64::encode(&asset), &file));
     }
-    
+
     print!("{}", str::replace(main, "%%ASSETS%%", &assets_extractor));
 }
 
 
 /// Takes `&str`, executes it. Expected executable result is file called `a.out`
-fn compile(build_command: &str) -> Option<String> {
+fn compile(build_command: &str, result_binary: &str) -> Option<String> {
     // assemble command
     let mut parts = build_command.split(" ");
     let mut command = Command::new(parts.next().unwrap());
@@ -189,13 +196,45 @@ fn compile(build_command: &str) -> Option<String> {
         eprintln!("\nCompilation error!");
         exit(1);
     }
-    
+
     // Check for compiled binary existence
-    let path = Path::new("a.out");
+    let path = Path::new(result_binary);
     if !path.exists() {
         eprintln!("Couldn't find compiled binary... Failed.");
         exit(1);
     }
 
-    Some(String::from("a.out"))
+    Some(String::from(result_binary))
+}
+
+fn bash_command(cmd: &str) -> String {
+    // assemble command
+    let mut command = Command::new("bash");
+    let command = command.args(&["-c", cmd]);
+
+    // execute
+    let output = command.output()
+        .expect(&format!("Failed to execute bash command. Command:\n{}", cmd));
+
+    // Print stderr to stderr...
+    {
+        let stderr = ::std::io::stderr();
+        let mut handle = stderr.lock();
+        let _result = handle.write_all(&output.stderr);
+    }
+
+    // check status
+    if !output.status.success() {
+        eprintln!("\nBash command execution error!");
+        exit(1);
+    }
+
+    String::from_utf8(output.stdout).expect("Could not parse command output - invalid UTF8")
+}
+
+
+#[test]
+fn test_bash_command() {
+    assert_eq!(bash_command("echo \"ahoj\" | cat"), "ahoj\n");
+    assert_eq!(bash_command("cat Cargo.toml | grep \"name\" | sed 's/.*\"\\(.*\\)\"/\\1/'"), "anyexec2c\n");
 }
