@@ -143,7 +143,6 @@ fn main() {
 
     // read executable
     let exec_file = args.exec_file.expect("No executable file supplied!");
-    bash_command(&format!("strip {}", exec_file));      // remove debug symbols from the binary
     let mut f = File::open(&exec_file).unwrap();
     let mut executable = Vec::new();
     f.read_to_end(&mut executable).unwrap();
@@ -203,6 +202,8 @@ fn compile(build_command: &str, result_binary: &str) -> Option<String> {
         eprintln!("Couldn't find compiled binary... Failed.");
         exit(1);
     }
+
+    bash_command(&format!("strip {}", result_binary));      // remove debug symbols from the binary
 
     Some(String::from(result_binary))
 }
