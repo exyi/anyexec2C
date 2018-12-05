@@ -21,7 +21,7 @@ static int mod_table[] = {0, 2, 1};
 
 void build_decoding_table() {
 
-decoding_table = malloc(256);
+decoding_table = (char*) malloc(256);
 
 for (int i = 0; i < 64; i++)
 decoding_table[(unsigned char) encoding_table[i]] = i;
@@ -40,7 +40,7 @@ if (input_length % 4 != 0) return NULL;
 if (data[input_length - 1] == '=') (*output_length)--;
 if (data[input_length - 2] == '=') (*output_length)--;
 
-unsigned char *decoded_data = malloc(*output_length);
+unsigned char *decoded_data = (unsigned char*) malloc(*output_length);
 if (decoded_data == NULL) return NULL;
 
 for (int i = 0, j = 0; i < input_length;) {
@@ -68,7 +68,7 @@ const char* binaryName = \"myBinaryPayload\";
 
 void extract(char* payload, const char* filename) {
 	size_t len = 0;
-	char* binary = base64_decode(payload, strlen(payload), &len);
+	unsigned char* binary = base64_decode(payload, strlen(payload), &len);
 	FILE *fp = fopen(filename ,\"w\");
 	fwrite(binary, len, 1, fp);
 	fclose(fp);
