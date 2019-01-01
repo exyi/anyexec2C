@@ -22,4 +22,8 @@ anyexec2c -e -x executable > source.c
 anyexec2c -b source.d > source.c      # (D lang with  DMD compiler)
 anyexec2c -b source.go > source.c     # (Go)
 anyexec2c -b src/main.rs > source.c   # (Rust using cargo - necessary to call from projects main dir)
+
+# we can also generate C# programs for cases when C/C++ is not an allowed language (using --target or -t switch)
+# this packs our memory test tool into a C# environement
+anyexec2c -b tools/memtest.c -t C# > memtest.cs
 ```
