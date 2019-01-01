@@ -8,9 +8,15 @@ use std::path::Path;
 use std::env;
 
 mod c_code;
+mod csharp_code;
 
-use c_code::*;
 use argparse::{ArgumentParser, StoreTrue, List, StoreOption};
+
+enum OutputLanguage {
+    C,
+    CSharp
+}
+
 
 struct CmdArgs {
     comment_files: Vec<String>,
@@ -18,6 +24,7 @@ struct CmdArgs {
     asset_files: Vec<String>,
     exec_file: Option<String>,
     enable_error_checks: bool,
+    target: OutputLanguage,
 }
 
 fn parse_args() -> CmdArgs {
@@ -27,11 +34,13 @@ fn parse_args() -> CmdArgs {
         build_file: None,
         asset_files: Vec::new(),
         exec_file: None,
+        target: OutputLanguage::C
     };
 
+    let mut target = "c".to_owned();
     {
         let mut ap = ArgumentParser::new();
-        ap.set_description("Generate C source code with binary payload.");
+        ap.set_description("Generate source code for staged delivery of any binary executable.");
         ap.refer(&mut args.enable_error_checks).add_option(
             &["-e", "--with-error-checks"],
             StoreTrue,
@@ -55,13 +64,28 @@ fn parse_args() -> CmdArgs {
         ap.refer(&mut args.exec_file).add_option(
             &["-x", "--exec"],
             StoreOption,
-            "Deliver and execute this file. Can't be used together with --build",
+            "Delivers a file. Can't be used together with --build",
+        );
+        ap.refer(&mut target).add_option(
+            &["-t", "--target"],
+            argparse::Store,
+            "Output Language"
         );
         ap.parse_args_or_exit();
+
     }
+    args.target =
+        match target.to_lowercase().as_str() {
+            "c" => OutputLanguage::C,
+            "csharp" | "c#" => OutputLanguage::CSharp,
+            _ => {
+                eprintln!("Unsupported target type '{}'.", target);
+                exit(1);
+            }
+        };
 
 
-    // check if exec and build correctlly set
+    // check if exec and build correctly set
     if args.build_file.is_some() == args.exec_file.is_some() {
         if args.build_file.is_some() {
             println!("Can't have build and exec together.");
@@ -129,13 +153,19 @@ fn main() {
             "go" => {
                 compile(&format!("go build -o a.out {}", build_file), "a.out")
             }
+            "c" => {
+                compile(&format!("gcc -o a.out {} -O3 -Wall", build_file), "a.out")
+            }
+            "cpp" => {
+                compile(&format!("g++ -o a.out {} -O3 -std=c++17 -Wall", build_file), "a.out")
+            }
             "rs" => {
                 let program_name = bash_command("cat Cargo.toml | grep \"name\" | sed 's/.*\"\\(.*\\)\"/\\1/'");
                 let pn = program_name.trim();
                 compile(&format!("cargo build -Z unstable-options --release --target x86_64-unknown-linux-musl --out-dir ."), pn)
             }
-            _ => {
-                eprintln!("File extension not recognized! Can't build!");
+            extension => {
+                eprintln!("File extension '{}' not recognized! Can't build!", extension);
                 exit(1);
             }
         };
@@ -147,14 +177,27 @@ fn main() {
     let mut executable = Vec::new();
     f.read_to_end(&mut executable).unwrap();
 
-    // insert libs and the main executable
-    print!("{}", str::replace(C_LIBS_AND_EXECUTABLE, "%%EXECUTABLE%%", &base64::encode(&executable)));
+    let part1 =
+        match args.target {
+            OutputLanguage::C => c_code::C_LIBS_AND_EXECUTABLE,
+            OutputLanguage::CSharp =>
+                csharp_code::PART1
+        };
 
-    let main = if args.enable_error_checks {
-        C_MAIN_WITH_CHECKS
-    } else {
-        C_MAIN_SIMPLE
-    };
+    // insert libs and the main executable
+    print!("{}", str::replace(part1, "%%EXECUTABLE%%", &base64::encode(&executable)));
+
+    let main =
+        match args.target {
+            OutputLanguage::C =>
+                if args.enable_error_checks {
+                    c_code::C_MAIN_WITH_CHECKS
+                } else {
+                    c_code::C_MAIN_SIMPLE
+                },
+            OutputLanguage::CSharp =>
+                csharp_code::MAIN
+        };
 
 
     // insert main and assets
