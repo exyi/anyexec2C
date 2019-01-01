@@ -10,8 +10,6 @@ use std::env;
 mod c_code;
 mod csharp_code;
 
-use c_code::*;
-// use csharp_code;
 use argparse::{ArgumentParser, StoreTrue, List, StoreOption};
 
 enum OutputLanguage {
@@ -42,7 +40,7 @@ fn parse_args() -> CmdArgs {
     let mut target = "c".to_owned();
     {
         let mut ap = ArgumentParser::new();
-        ap.set_description("Generate C source code with binary payload.");
+        ap.set_description("Generate source code for staged delivery of any binary executable.");
         ap.refer(&mut args.enable_error_checks).add_option(
             &["-e", "--with-error-checks"],
             StoreTrue,
@@ -66,7 +64,7 @@ fn parse_args() -> CmdArgs {
         ap.refer(&mut args.exec_file).add_option(
             &["-x", "--exec"],
             StoreOption,
-            "Deliver anlis file. Can't be used together with --build",
+            "Delivers a file. Can't be used together with --build",
         );
         ap.refer(&mut target).add_option(
             &["-t", "--target"],
@@ -181,7 +179,7 @@ fn main() {
 
     let part1 =
         match args.target {
-            OutputLanguage::C => C_LIBS_AND_EXECUTABLE,
+            OutputLanguage::C => c_code::C_LIBS_AND_EXECUTABLE,
             OutputLanguage::CSharp =>
                 csharp_code::PART1
         };
@@ -193,9 +191,9 @@ fn main() {
         match args.target {
             OutputLanguage::C =>
                 if args.enable_error_checks {
-                    C_MAIN_WITH_CHECKS
+                    c_code::C_MAIN_WITH_CHECKS
                 } else {
-                    C_MAIN_SIMPLE
+                    c_code::C_MAIN_SIMPLE
                 },
             OutputLanguage::CSharp =>
                 csharp_code::MAIN
