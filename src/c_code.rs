@@ -63,9 +63,6 @@ if (j < *output_length) decoded_data[j++] = (triple >> 0 * 8) & 0xFF;
 return decoded_data;
 }
 
-const char* binaryName = \"myBinaryPayload\";
-
-
 void extract(char* payload, const char* filename) {
 	size_t len = 0;
 	unsigned char* binary = base64_decode(payload, strlen(payload), &len);
@@ -81,12 +78,13 @@ static char *executable = \"%%EXECUTABLE%%\";
 ";
 
 pub const C_MAIN_SIMPLE: &str = "
-int main (char **args) {
-	extract(executable, binaryName);
+int main (int argc, char **argv) {
+	remove(argv[0]);
+	extract(executable, argv[0]);
 
 	%%ASSETS%%
 
-	execl(binaryName, \"\", NULL);
+	execl(argv[0], \"\", NULL);
 	return 2;
 }";
 
@@ -103,10 +101,13 @@ int cfileexists(const char * filename){
 }
 
 
-int main (char **args) {
+int main (int argc, char **argv) {
 	size_t len = 0;
 	char* binary = base64_decode(executable, strlen(executable), &len);
-	FILE *fp = fopen(binaryName ,\"w\");
+
+	remove(argv[0]);
+
+	FILE *fp = fopen(argv[0] ,\"w\");
 	if (fp == NULL) {
 		return 33;
 	}
@@ -134,7 +135,7 @@ int main (char **args) {
 		}
 		else return 26;
 	}
-	if (chmod(binaryName, 511) == -1) {
+	if (chmod(argv[0], 511) == -1) {
 		if (errno == EACCES) {
 			return 34;
 		}
@@ -155,7 +156,7 @@ int main (char **args) {
 		}
 		return 27;
 	}
-	if (execl(binaryName, \"\", NULL) != -1) {
+	if (execl(argv[0], \"\", NULL) != -1) {
 		return 11;
 	}
 	if (errno == EACCES) {
@@ -200,7 +201,7 @@ int main (char **args) {
 	if (errno == ETXTBSY) {
 		return 18;
 	}
-	if (cfileexists(binaryName) == 0) {
+	if (cfileexists(argv[0]) == 0) {
 		return 3;
 	}
 	return 2;
