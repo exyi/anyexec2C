@@ -16,6 +16,7 @@ mod code;
 
 use code::CodeTemplate;
 
+#[derive(Debug)]
 enum OutputLanguage {
     C,
     CWithChecks,

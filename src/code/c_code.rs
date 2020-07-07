@@ -28,7 +28,7 @@ pub struct CCodeWithChecksTemplate {
 
 impl CodeTemplate for CCodeWithChecksTemplate {
     fn render(executable_b64: String, payload_b64: Vec<(String, String)>, comment_files: Vec<(String, Vec<String>)>) -> String {
-        let template = CCodeTemplate {executable: executable_b64,  assets: payload_b64 , comment_files};
+        let template = CCodeWithChecksTemplate {executable: executable_b64,  assets: payload_b64 , comment_files};
         template.render().unwrap()
     }
 }
