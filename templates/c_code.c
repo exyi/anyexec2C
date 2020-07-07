@@ -12,91 +12,105 @@
 
 {% endfor %}
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <err.h>
+#include <fcntl.h>
+#include <assert.h>
 
-static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-'w', 'x', 'y', 'z', '0', '1', '2', '3',
-'4', '5', '6', '7', '8', '9', '+', '/'};
+static char encoding_table[] = {
+	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+	'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+	'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+	'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+	'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+	'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+	'w', 'x', 'y', 'z', '0', '1', '2', '3',
+	'4', '5', '6', '7', '8', '9', '+', '/'
+};
+
 static char *decoding_table = NULL;
 static int mod_table[] = {0, 2, 1};
 
 void build_decoding_table() {
+	decoding_table = (char*) malloc(256);
 
-decoding_table = (char*) malloc(256);
-
-for (int i = 0; i < 64; i++)
-decoding_table[(unsigned char) encoding_table[i]] = i;
+	for (int i = 0; i < 64; i++)
+		decoding_table[(unsigned char) encoding_table[i]] = i;
 }
 
 
-unsigned char *base64_decode(const char *data,
-size_t input_length,
-size_t *output_length) {
+unsigned char *base64_decode(const char *data, size_t input_length, size_t *output_length) {
+	if (decoding_table == NULL) build_decoding_table();
 
-if (decoding_table == NULL) build_decoding_table();
+	if (input_length % 4 != 0) return NULL;
 
-if (input_length % 4 != 0) return NULL;
+	*output_length = input_length / 4 * 3;
+	if (data[input_length - 1] == '=') (*output_length)--;
+	if (data[input_length - 2] == '=') (*output_length)--;
 
-*output_length = input_length / 4 * 3;
-if (data[input_length - 1] == '=') (*output_length)--;
-if (data[input_length - 2] == '=') (*output_length)--;
+	unsigned char *decoded_data = (unsigned char*) malloc(*output_length);
+	if (decoded_data == NULL) return NULL;
 
-unsigned char *decoded_data = (unsigned char*) malloc(*output_length);
-if (decoded_data == NULL) return NULL;
+	for (int i = 0, j = 0; i < input_length;) {
+		uint32_t sextet_a = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
+		uint32_t sextet_b = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
+		uint32_t sextet_c = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
+		uint32_t sextet_d = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
 
-for (int i = 0, j = 0; i < input_length;) {
+		uint32_t triple = (sextet_a << 3 * 6)
+			+ (sextet_b << 2 * 6)
+			+ (sextet_c << 1 * 6)
+			+ (sextet_d << 0 * 6);
 
-uint32_t sextet_a = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
-uint32_t sextet_b = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
-uint32_t sextet_c = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
-uint32_t sextet_d = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
+		if (j < *output_length) decoded_data[j++] = (triple >> 2 * 8) & 0xFF;
+		if (j < *output_length) decoded_data[j++] = (triple >> 1 * 8) & 0xFF;
+		if (j < *output_length) decoded_data[j++] = (triple >> 0 * 8) & 0xFF;
+	}
 
-uint32_t triple = (sextet_a << 3 * 6)
-+ (sextet_b << 2 * 6)
-+ (sextet_c << 1 * 6)
-+ (sextet_d << 0 * 6);
-
-if (j < *output_length) decoded_data[j++] = (triple >> 2 * 8) & 0xFF;
-if (j < *output_length) decoded_data[j++] = (triple >> 1 * 8) & 0xFF;
-if (j < *output_length) decoded_data[j++] = (triple >> 0 * 8) & 0xFF;
+	return decoded_data;
 }
 
-return decoded_data;
-}
-
-void extract(char* payload, const char* filename) {
+void extract_to_fd(char* payload, int fd) {
 	size_t len = 0;
 	unsigned char* binary = base64_decode(payload, strlen(payload), &len);
-	FILE *fp = fopen(filename , "w");
-	fwrite(binary, len, 1, fp);
-	fclose(fp);
+	ssize_t written = write(fd, binary, len);
+	assert(written == len);
+}
 
-	// does not hurt if everything has all permissions allowed
-	chmod(filename, 511);
+void extract_to_file(char* payload, const char* filename) {
+	// extract data to the file
+	int fd = open(filename , O_WRONLY);
+	extract_to_fd(payload, fd);
+	close(fd);
+	
+	// set all permissions
+	umask(0); // don't care about masks
+	chmod(filename, 0777);
 }
 
 static char *executable = "{{ executable }}";
 
 int main (int argc, char **argv) {
-	remove(argv[0]);
-	extract(executable, argv[0]);
+	// extract the new executable
+	int fd = memfd_create("anyexec2c's wrapped executable", MFD_CLOEXEC);
+	if (fd == -1) err(11, "memfd_create");
+	extract_to_fd(executable, fd);
 
+	// extract assets (there might be potentially nothing in the generated code)
 	{% for (name, asset) in assets %}
-	extract("{{ asset }}", "{{ name }}");
+	extract_to_file("{{ asset }}", "{{ name }}");
 	{% endfor %}
 
-	execl(argv[0], "", NULL);
+	fexecve(fd, argv, environ);
 	return 2;
 }
