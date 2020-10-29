@@ -6,3 +6,4 @@ authors = ["exyi", "vakabus"]
 [dependencies]
 base64 = "*"
 argparse = "*"
+askama = "0.8"
