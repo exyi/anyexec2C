@@ -20,7 +20,8 @@ use code::CodeTemplate;
 enum OutputLanguage {
     C,
     CWithChecks,
-    CSharp
+    CSharp,
+    Python
 }
 
 
@@ -78,6 +79,7 @@ fn parse_args() -> CmdArgs {
             "c" => OutputLanguage::C,
             "c_with_checks" => OutputLanguage::CWithChecks,
             "csharp" | "c#" => OutputLanguage::CSharp,
+            "python" | "py" => OutputLanguage::Python,
             _ => {
                 eprintln!("Unsupported target type '{}'.", target);
                 exit(1);
@@ -187,6 +189,7 @@ fn main() {
         OutputLanguage::C => generate_source::<::code::c_code::CCodeTemplate>,
         OutputLanguage::CWithChecks => generate_source::<::code::c_code::CCodeWithChecksTemplate>,
         OutputLanguage::CSharp => generate_source::<::code::csharp_code::CSharpCodeTemplate>,
+        OutputLanguage::Python => generate_source::<::code::python::PythonCodeTemplate>,
     }(exec_file, args.asset_files, args.comment_files));
 }
 

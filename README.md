@@ -1,6 +1,6 @@
 # AnyExec2C
 
-This is a simple program used wrap any executable into some source code. When the resulting source is compiled and run, it acts as a bootstrap stage. It unpacks the executable from within itself, dumps it to disk and runs it afterwards via Unix `exec` syscall. Historically, main target language has been C. As of now, also C# is supported as a target language.
+This is a simple program used wrap any executable into some source code. When the resulting source is compiled and run, it acts as a bootstrap stage. It unpacks the executable from within itself, dumps it to disk and runs it afterwards via Unix `exec` syscall. Historically, main target language has been C. As of now, also C# and Python3 are supported as a target language.
 
 ## Purpose
 
@@ -26,4 +26,6 @@ anyexec2c -b src/main.rs > source.c   # (Rust using cargo - necessary to call fr
 # we can also generate C# programs for cases when C/C++ is not an allowed language (using --target or -t switch)
 # this packs our memory test tool into a C# environement
 anyexec2c -b tools/memtest.c -t C# > memtest.cs
+# or a Python program :)
+anyexec2c -b tools/memtest.c -t python > memtest.py
 ```
