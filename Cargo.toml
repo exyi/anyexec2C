@@ -1,8 +1,9 @@
 [package]
-name = "anyexec2C"
+name = "anyexec2c"
 version = "0.1.0"
-authors = ["exyi"]
+authors = ["exyi", "vakabus"]
 
 [dependencies]
 base64 = "*"
 argparse = "*"
+askama = "0.8"

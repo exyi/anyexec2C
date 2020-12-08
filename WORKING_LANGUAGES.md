@@ -6,11 +6,30 @@ D has 3 major compilers. One of them - LLVM based LDC - does not work. That's ca
 
 ## Rust
 
-Standard `rustc` compiler does not work. The binaries are sometimes too big and must be stripped. But even if you do that, the binary does not execute properly. Currently, we have no idea why.
+Rust works... ...when you compile it statically (which is not the default, surprisingly).
+
+```sh
+# install new SDK
+rustup target add x86_64-unknown-linux-musl
+
+# build your code
+cargo build --target x86_64-unknown-linux-musl --release
+```
+
+It might also be a good idea to strip the binary ahead of running it through `anyexec2c`, because it's quite big and by stripping it, you can get it from 5MB to something like 0.5MB.
+
+```sh
+strip build/x86_64-unknown-linux-musl/release/$YOUR_PROJECT_NAME
+anyexec2C -x build/x86_64-unknown-linux-musl/release/$YOUR_PROJECT_NAME > /tmp/source.c
+```
 
 ## C
 
-It's pretty much useless, but you can run any C binaries. The two main compilers, GCC and `clang`, both work out of the box.
+It's pretty much useless, but you can run any C binaries. The two main compilers, `GCC` and `clang`, both work out of the box.
+
+## Go
+
+Resulting binaries work just as you would expect. Nothing special is required.
 
 ## Python
 

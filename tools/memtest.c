@@ -1,3 +1,10 @@
+// Part of anyexec2c project
+// https://github.com/exyi/anyexec2C/tree/master/tools
+//
+// Tests memory limits of the sandbox, measured in blocks of BLOCK_SIZE
+// Exit code 254 probably means that the limit has not been reached when that many blocks were allocated
+// Exit code 255 is some error
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -10,7 +17,7 @@ int child(int pipe_write) {
         size_t size = BLOCK_SIZE;
 
         // prevents optimalization by compiler
-        unsigned char volatile* data = malloc(size);
+        unsigned char volatile* data = (unsigned char*)malloc(size);
         if (data == NULL) {
             return 1;
         }
