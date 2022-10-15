@@ -29,3 +29,9 @@ anyexec2c -b tools/memtest.c -t C# > memtest.cs
 # or a Python program :)
 anyexec2c -b tools/memtest.c -t python > memtest.py
 ```
+
+
+## Other utilities
+
+* [`tools/memtest.c`](tools/memtest.c) - will measure the memory limit. The exit code is the number of blocks allocated successfully. If your environment doesn't allow C, we also have Python version, or you can obviously compile it using anyexec2c to any supported target (like C#)
+* [`recodex-utils/archiver.ts`](recodex-utils) - script to download all your submissions from ReCodex
